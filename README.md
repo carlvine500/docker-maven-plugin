@@ -1,3 +1,11 @@
+# TODO
+- generate image version by git latest commit time : repository/docker-demo:20171031-094252
+```
+commit de33b771681eb2c9a00d950f06fde33abf719a63
+Author: carlvine <carlvine500@163.com>
+Date:   Tue Oct 31 09:42:52 2017 +0800
+
+```
 # docker-maven-plugin
 [![Travis CI](https://travis-ci.org/spotify/docker-maven-plugin.svg?branch=master)](https://travis-ci.org/spotify/docker-maven-plugin/) 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.spotify/docker-maven-plugin/)
