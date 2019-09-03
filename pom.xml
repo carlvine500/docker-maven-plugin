@@ -4,7 +4,7 @@
 
   <groupId>com.spotify</groupId>
   <artifactId>docker-maven-plugin</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.0-cp-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>docker-maven-plugin</name>
   <description>A maven plugin for docker</description>
@@ -34,13 +34,17 @@
     <connection>scm:git:https://github.com/spotify/docker-maven-plugin</connection>
     <developerConnection>scm:git:git@github.com:spotify/docker-maven-plugin</developerConnection>
     <url>https://github.com/spotify/docker-maven-plugin</url>
-    <tag>v1.2.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <distributionManagement>
-    <snapshotRepository>
+    <!--<snapshotRepository>
       <id>ossrh</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>-->
+    <snapshotRepository>
+      <id>snapshots</id>
+      <url>http://maven.successchannel.tech/nexus/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
 
@@ -105,28 +109,29 @@
         <javadoc.opts>-Xdoclint:none</javadoc.opts>
       </properties>
     </profile>
-
-    <profile>
-      <id>sign-artifacts</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
+    <!--
+       <profile>
+     <id>sign-artifacts</id>
+     <build>
+       <plugins>
+         <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-gpg-plugin</artifactId>
+           <version>1.5</version>
+           <executions>
+             <execution>
+               <id>sign-artifacts</id>
+               <phase>verify</phase>
+               <goals>
+                 <goal>sign</goal>
+               </goals>
+             </execution>
+           </executions>
+         </plugin>
+       </plugins>
+     </build>
+   </profile>
+   -->
   </profiles>
 
   <dependencies>
@@ -182,7 +187,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.2.3</version>
+      <version>2.9.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -277,7 +282,7 @@
           <target>1.8</target>
         </configuration>
       </plugin>
-      <plugin>
+      <!--<plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
@@ -300,8 +305,8 @@
         <configuration>
           <linkXRef>false</linkXRef>
         </configuration>
-      </plugin>
-      <plugin>
+      </plugin>-->
+      <!--<plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
         <version>3.0.0</version>
@@ -328,36 +333,36 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-invoker-plugin</artifactId>
-        <version>1.7</version>
-        <configuration>
-          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-          <streamLogs>true</streamLogs>
-          <pomIncludes>
-            <pomInclude>*/pom.xml</pomInclude>
-          </pomIncludes>
-          <postBuildHookScript>verify</postBuildHookScript>
-          <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-          <settingsFile>src/it/settings.xml</settingsFile>
-          <goals>
-            <goal>clean</goal>
-            <goal>verify</goal>
-          </goals>
-        </configuration>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <goals>
-              <goal>install</goal>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+      </plugin>-->
+      <!-- <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-invoker-plugin</artifactId>
+         <version>1.7</version>
+         <configuration>
+           <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+           <streamLogs>true</streamLogs>
+           <pomIncludes>
+             <pomInclude>*/pom.xml</pomInclude>
+           </pomIncludes>
+           <postBuildHookScript>verify</postBuildHookScript>
+           <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+           <settingsFile>src/it/settings.xml</settingsFile>
+           <goals>
+             <goal>clean</goal>
+             <goal>verify</goal>
+           </goals>
+         </configuration>
+         <executions>
+           <execution>
+             <id>integration-test</id>
+             <goals>
+               <goal>install</goal>
+               <goal>integration-test</goal>
+               <goal>verify</goal>
+             </goals>
+           </execution>
+         </executions>
+       </plugin>-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
@@ -371,7 +376,7 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
+      <!--<plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.0.1</version>
@@ -390,8 +395,8 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
+      </plugin>-->
+      <!--<plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
         <version>2.5</version>
@@ -405,7 +410,7 @@
             <version>1.9</version>
           </dependency>
         </dependencies>
-      </plugin>
+      </plugin>-->
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -420,7 +425,7 @@
     </plugins>
   </build>
 
-  <reporting>
+  <!--<reporting>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -428,6 +433,6 @@
         <version>3.2</version>
       </plugin>
     </plugins>
-  </reporting>
+  </reporting>-->
 
 </project>

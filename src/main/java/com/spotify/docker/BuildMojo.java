@@ -125,7 +125,7 @@ public class BuildMojo extends AbstractDockerMojo {
    * Flag to attempt to pull base images even if older images exists locally. Sends the equivalent
    * of `--pull=true` to Docker daemon when building the image.
    */
-  @Parameter(property = "pullOnBuild", defaultValue = "false")
+  @Parameter(property = "pullOnBuild", defaultValue = "true")
   private boolean pullOnBuild;
 
   /** Set to true to pass the `--no-cache` flag to the Docker daemon when building an image. */
