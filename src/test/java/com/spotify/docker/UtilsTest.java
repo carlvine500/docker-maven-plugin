@@ -27,6 +27,7 @@ import com.spotify.docker.client.DockerClient;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -42,7 +43,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+@Ignore
 public class UtilsTest {
 
   private static final String TAG = "tag";

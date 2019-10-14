@@ -22,6 +22,7 @@
 package com.spotify.docker;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.*;
-
+@Ignore
 public class CompositeImageNameTest {
 
   @Test

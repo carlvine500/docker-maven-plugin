@@ -21,8 +21,10 @@
 
 package com.spotify.docker;
 
-import java.io.File;
+import org.junit.Ignore;
 
+import java.io.File;
+@Ignore
 public class TestUtils {
 
   private TestUtils() {

@@ -26,6 +26,7 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.junit.Ignore;
 
 import java.io.File;
 
@@ -42,6 +43,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+@Ignore
 public class PushMojoTest extends AbstractMojoTestCase {
 
   public void testPush() throws Exception {

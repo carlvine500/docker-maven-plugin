@@ -24,6 +24,7 @@ package com.spotify.docker;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.junit.Ignore;
 import org.mockito.ArgumentCaptor;
 
 import java.io.File;
@@ -38,7 +39,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-
+@Ignore
 public class TagMojoTest extends AbstractMojoTestCase {
 
   public void testTag1() throws Exception {

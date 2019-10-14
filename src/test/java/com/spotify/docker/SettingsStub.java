@@ -24,7 +24,9 @@ package com.spotify.docker;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
+import org.junit.Ignore;
 
+@Ignore
 public class SettingsStub extends Settings {
 
     public SettingsStub() {

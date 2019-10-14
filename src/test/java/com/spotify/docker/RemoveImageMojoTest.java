@@ -27,6 +27,7 @@ import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.RemovedImage;
 
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
+import org.junit.Ignore;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+@Ignore
 public class RemoveImageMojoTest extends AbstractMojoTestCase {
 
   public void testRemoveImage() throws Exception {

@@ -25,12 +25,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.Sets;
-
+import com.google.common.collect.*;
 import com.spotify.docker.client.AnsiProgressHandler;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -38,47 +33,48 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValue;
-
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
+import org.apache.maven.artifact.versioning.VersionRangeExt;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.PluginParameterExpressionEvaluator;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.artifact.filter.collection.*;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.CharMatcher.WHITESPACE;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Ordering.natural;
-import static com.spotify.docker.Utils.parseImageName;
-import static com.spotify.docker.Utils.pushImage;
-import static com.spotify.docker.Utils.pushImageTag;
-import static com.spotify.docker.Utils.saveImage;
-import static com.spotify.docker.Utils.writeImageInfoFile;
+import static com.spotify.docker.Utils.*;
 import static com.typesafe.config.ConfigRenderOptions.concise;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -86,7 +82,7 @@ import static java.util.Collections.emptyList;
 /**
  * Used to build docker images.
  */
-@Mojo(name = "build", threadSafe = true)
+@Mojo(name = "build", requiresDependencyResolution = ResolutionScope.RUNTIME, threadSafe = true)
 public class BuildMojo extends AbstractDockerMojo {
 
   private static final Lock LOCK = new ReentrantLock();
@@ -102,10 +98,10 @@ public class BuildMojo extends AbstractDockerMojo {
   private static final char WINDOWS_SEPARATOR = '\\';
 
   /**
-   * Json Object Mapper to encode arguments map 
+   * Json Object Mapper to encode arguments map
    */
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  
+
   /**
    * Directory containing the Dockerfile. If the value is not set, the plugin will generate a
    * Dockerfile using the required baseImage value, plus the optional entryPoint, cmd and maintainer
@@ -143,6 +139,10 @@ public class BuildMojo extends AbstractDockerMojo {
   /** Flag to push image after it is built. Defaults to false. */
   @Parameter(property = "pushImage", defaultValue = "false")
   private boolean pushImage;
+
+  /** Flag to push image after it is built. Defaults to false. */
+  @Parameter(property = "checkJar", defaultValue = "true")
+  private boolean checkJar;
 
   /** Flag to push image using their tags after it is built. Defaults to false. */
   @Parameter(property = "pushImageTag", defaultValue = "false")
@@ -256,13 +256,16 @@ public class BuildMojo extends AbstractDockerMojo {
   private MavenProject mavenProject;
 
   @Parameter(property = "dockerBuildArgs")
-  private Map<String, String> buildArgs;  
-  
-  /** HEALTHCHECK. It expects a element for 'options' and 'cmd' 
-   * Added in docker 1.12 (https://docs.docker.com/engine/reference/builder/#/healthcheck). 
+  private Map<String, String> buildArgs;
+
+  /** HEALTHCHECK. It expects a element for 'options' and 'cmd'
+   * Added in docker 1.12 (https://docs.docker.com/engine/reference/builder/#/healthcheck).
    */
   @Parameter(property = "healthcheck")
   private Map<String, String> healthcheck;
+
+  @Component
+  private MavenProject project;
 
   private PluginParameterExpressionEvaluator expressionEvaluator;
 
@@ -289,7 +292,7 @@ public class BuildMojo extends AbstractDockerMojo {
   public boolean getForceTags() {
     return forceTags;
   }
-  
+
   private boolean weShouldSkipDockerBuild() {
     if (skipDockerBuild) {
       getLog().info("Property skipDockerBuild is set");
@@ -400,6 +403,9 @@ public class BuildMojo extends AbstractDockerMojo {
       copyResources(destination);
     }
 
+    if (checkJar) {
+      checkJarWithBlacklistWhitelist(this.getClass().getClassLoader(),mavenProject.getArtifacts());
+    }
     buildImage(docker, destination, buildParams());
     tagImage(docker, forceTags);
 
@@ -426,6 +432,78 @@ public class BuildMojo extends AbstractDockerMojo {
 
     // Write image info file
     writeImageInfoFile(buildInfo, tagInfoFile);
+  }
+
+  private static boolean isJar(Artifact at){
+    return at.getType() != null && at.getType().equals("jar");
+  }
+
+  public static void checkJarWithBlacklistWhitelist(ClassLoader classLoader,Set<Artifact> artifacts) throws IOException, MojoExecutionException {
+    Map<String, VersionRangeExt> blacklist = getVersionRangeExts(classLoader,"dependency-blacklist.conf");
+    List<Artifact> artifactsInBlack = artifacts.stream()
+            .filter((artifact) -> isJar(artifact))
+            .filter((artifact) -> {
+              VersionRangeExt versionRangeExt = blacklist.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
+              if (versionRangeExt == null) {
+                return false;
+              }
+              return versionRangeExt.containsVersion(new DefaultArtifactVersion(artifact.getVersion()));
+            })
+            .collect(Collectors.toList());
+
+    Map<String, VersionRangeExt> whitelist = getVersionRangeExts(classLoader,"dependency-whitelist.conf");
+    List<Artifact> artifactsNotInWhite = artifacts.stream()
+            .filter((artifact) -> isJar(artifact))
+            .filter((artifact) -> {
+              VersionRangeExt versionRangeExt = whitelist.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
+              if (versionRangeExt == null) {
+                return false;
+              }
+              return !versionRangeExt.containsVersion(new DefaultArtifactVersion(artifact.getVersion()));
+            })
+            .collect(Collectors.toList());
+    if (!artifactsInBlack.isEmpty() || !artifactsNotInWhite.isEmpty()) {
+      String blackErr = artifactsInBlack.stream()
+              .map((artifact) ->
+              {
+                VersionRangeExt versionRangeExt = blacklist.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
+                return artifact + " in blacklist version range:" + versionRangeExt;
+              })
+              .collect(Collectors.joining("\n"));
+      String whiteErr = artifactsNotInWhite.stream()
+              .map((artifact) ->
+              {
+                VersionRangeExt versionRangeExt = whitelist.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
+                return artifact + " not in whitelist version range:" + versionRangeExt;
+              })
+              .collect(Collectors.joining("\n"));
+      throw new MojoExecutionException("\n--- following jar not allowed ---: "
+              + "\n you can use -DcheckJar=false to skip"
+              + "\n you can refactor dependency-blacklist.conf/dependency-whitelist.conf "
+              + "\n" + blackErr
+              + "\n" + whiteErr);
+    }
+  }
+
+  public static Map<String, VersionRangeExt> getVersionRangeExts(ClassLoader classLoader,String resource) throws IOException, MojoExecutionException {
+    InputStream input = classLoader.getResourceAsStream(resource);
+
+    String content = IOUtils.toString(input, Charset.forName("utf-8"));
+    String[] lines = StringUtils.split(content, "\n");
+    Map<String, VersionRangeExt> checklist = new HashMap<>();
+
+    try {
+      for (String line : lines) {
+        String[] kv = StringUtils.split(line, "=");
+        if (kv.length != 2) {
+          continue;
+        }
+        checklist.put(kv[0], VersionRangeExt.createFromVersionSpec(kv[1]));
+      }
+    } catch (InvalidVersionSpecificationException e) {
+      throw new MojoExecutionException("config error: " + " " + e);
+    }
+    return checklist;
   }
 
   private String getDestination() {
@@ -857,7 +935,7 @@ public class BuildMojo extends AbstractDockerMojo {
     return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
   }
 
-  private DockerClient.BuildParam[] buildParams() 
+  private DockerClient.BuildParam[] buildParams()
     throws UnsupportedEncodingException, JsonProcessingException {
     final List<DockerClient.BuildParam> buildParams = Lists.newArrayList();
     if (pullOnBuild) {
@@ -870,7 +948,7 @@ public class BuildMojo extends AbstractDockerMojo {
         buildParams.add(DockerClient.BuildParam.rm(false));
       }
     if (!buildArgs.isEmpty()) {
-      buildParams.add(DockerClient.BuildParam.create("buildargs", 
+      buildParams.add(DockerClient.BuildParam.create("buildargs",
         URLEncoder.encode(OBJECT_MAPPER.writeValueAsString(buildArgs), "UTF-8")));
     }
     return buildParams.toArray(new DockerClient.BuildParam[buildParams.size()]);

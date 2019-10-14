@@ -25,6 +25,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.testing.stubs.MavenProjectStub;
 import org.codehaus.plexus.util.ReaderFactory;
+import org.junit.Ignore;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import java.util.List;
  * Originally taken from <a href="http://bit.ly/1RNnShQ">
  *   Maven Plugin Testing Mechanism</a> guide but adapted for our use case.</p>
  */
+@Ignore
 public class ProjectStub extends MavenProjectStub {
 
   public ProjectStub(File pom) {

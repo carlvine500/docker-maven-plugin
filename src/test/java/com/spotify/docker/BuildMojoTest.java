@@ -36,6 +36,7 @@ import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.project.MavenProject;
+import org.junit.Ignore;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -64,7 +65,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.spy;
 import static org.assertj.core.api.Assertions.assertThat;
-
+@Ignore
 public class BuildMojoTest extends AbstractMojoTestCase {
 
   private static final List<String> GENERATED_DOCKERFILE = Arrays.asList(
